@@ -55,47 +55,47 @@ namespace Script
             for (var i = 0; i < angles.Length; i++)
             {
                 var value = SetAngleToTarget( angles[i], _target.position);
-                foreach (var val in collisionObstacle)
+                foreach (var val in obstacles)
                 {
-                    value *=  ObstacleCollisionEnter(angles[i], val.position);
+                    value *=  AddWeightToAngle(angles[i], val.position);
                 }
                 distances[i] = value;
             }
 
-            for (var i = 0; i < angles.Length; i++)
-            {
-                var value = 0f;
-
-                foreach (var obstacle in obstacles)
-                {
-                    value += AddWeightToAngle(angles[i], obstacle.position)-value;
-                }
-
-                value /= obstacles.Count;
-                obstacleDist[i] = value;
-            }
+            // for (var i = 0; i < angles.Length; i++)
+            // {
+            //     var value = 0f;
+            //
+            //     foreach (var obstacle in obstacles)
+            //     {
+            //         value += AddWeightToAngle(angles[i], obstacle.position)-value;
+            //     }
+            //
+            //     value /= obstacles.Count;
+            //     obstacleDist[i] = value;
+            // }
             
-            var lastObstacleDistance = 0f;
-            var selectedObstacleDirection = -5;
-
-            for (var i = 0; i < obstacleDist.Length; i++)
-            {
-                if (obstacleDist[i]>lastObstacleDistance)
-                {
-                    lastObstacleDistance = obstacleDist[i];
-                    selectedObstacleDirection = i;
-                }
-            }
+            // var lastObstacleDistance = 0f;
+            // var selectedObstacleDirection = -5;
+            //
+            // for (var i = 0; i < obstacleDist.Length; i++)
+            // {
+            //     if (obstacleDist[i]>lastObstacleDistance)
+            //     {
+            //         lastObstacleDistance = obstacleDist[i];
+            //         selectedObstacleDirection = i;
+            //     }
+            // }
             
             var lastDistance = 0f;
             var selectedDirection = 0;
 
             for (var i = 0; i < distances.Length; i++)
             {
-                if (i== selectedObstacleDirection || i == (selectedObstacleDirection + 1)%16 || i== (selectedObstacleDirection - 1) || i == selectedObstacleDirection+15)
-                {
-                    continue;
-                }
+                // if (i== selectedObstacleDirection || i == (selectedObstacleDirection + 1)%16 || i== (selectedObstacleDirection - 1) || i == selectedObstacleDirection+15)
+                // {
+                //     continue;
+                // }
                 if (distances[i]>lastDistance)
                 {
                     lastDistance = distances[i];
@@ -105,17 +105,18 @@ namespace Script
 
             for (var i = 0; i < angles.Length; i++)
             {
-                if (i== selectedObstacleDirection || i == (selectedObstacleDirection + 1)%16 || i== (selectedObstacleDirection - 1) || i == selectedObstacleDirection+15)
-                {
-                    Debug.DrawRay(transform.position, angles[i].normalized * obstacleDist[i], Color.red);
-                    continue;
-                }
+                // if (i== selectedObstacleDirection || i == (selectedObstacleDirection + 1)%16 || i== (selectedObstacleDirection - 1) || i == selectedObstacleDirection+15)
+                // {
+                //     Debug.DrawRay(transform.position, angles[i].normalized * obstacleDist[i], Color.red);
+                //     continue;
+                // }
                 if (i == selectedDirection)
                 {
                     print(distances[i]);
                     Debug.DrawRay(transform.position, angles[i].normalized * distances[i], Color.blue);
                     transform.position += (Vector3)angles[i].normalized * (speed * Time.deltaTime);
                 }
+                
                 else
                 {
                     Debug.DrawRay(transform.position, angles[i].normalized * distances[i], Color.green);
@@ -136,7 +137,7 @@ namespace Script
         {
             var myAngle = (target - (Vector2)transform.position).normalized;
             var dotProduct = Vector2.Dot(angle.normalized, myAngle);
-            //dotProduct *= -1;
+            dotProduct *= -1;
             dotProduct += (1 - dotProduct)/2;
 
             //dotProduct = 1 - Math.Abs(dotProduct - 0.65f);
@@ -144,17 +145,17 @@ namespace Script
             return dotProduct;
         }
 
-        private float ObstacleCollisionEnter(Vector2 angle, Vector2 target)
-        {
-            var myAngle = (target - (Vector2)transform.position).normalized;
-            var dotProduct = Vector2.Dot(angle.normalized, myAngle);
-            dotProduct *= -1;
-            dotProduct += (1 - dotProduct)/2;
-
-            dotProduct = 1 - Math.Abs(dotProduct - 0.65f);
-            return dotProduct;
-
-        }
+        // private float ObstacleCollisionEnter(Vector2 angle, Vector2 target)
+        // {
+        //     var myAngle = (target - (Vector2)transform.position).normalized;
+        //     var dotProduct = Vector2.Dot(angle.normalized, myAngle);
+        //     dotProduct *= -1;
+        //     dotProduct += (1 - dotProduct)/2;
+        //
+        //     dotProduct = 1 - Math.Abs(dotProduct - 0.65f);
+        //     return dotProduct;
+        //
+        // }
 
         private List<Transform> CheckObstacle(Collider2D myCollider)
         {
@@ -171,17 +172,17 @@ namespace Script
 
                 }
             }
-
-            if (myCollider == obstacleCollisionCollider)
-            {
-                var ray = Physics2D.Raycast(transform.position, _target.position-transform.position,
-                    Vector2.Distance(transform.position, _target.position), filter2D.layerMask);
-            
-                if (ray.collider != null)
-                {
-                    returnValue.Add(ray.collider.transform);
-                }
-            }
+            //
+            // if (myCollider == obstacleCollisionCollider)
+            // {
+            //     var ray = Physics2D.Raycast(transform.position, _target.position-transform.position,
+            //         Vector2.Distance(transform.position, _target.position), filter2D.layerMask);
+            //
+            //     if (ray.collider != null)
+            //     {
+            //         returnValue.Add(ray.collider.transform);
+            //     }
+            // }
             
             return returnValue;
         }
