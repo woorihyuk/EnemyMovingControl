@@ -10,7 +10,7 @@ namespace Script
         // private float _angle;
         public Collider2D obstacleCheckCollider;
         public Collider2D obstacleCollisionCollider;
-        public Transform _target;
+        public Vector2 target;
         public List<Transform> obstacles;
         public ContactFilter2D filter2D;
         public float speed;
@@ -101,7 +101,7 @@ namespace Script
             {
                 for (var i = 0; i < angles.Length; i++)
                 {
-                    var value = SetAngleToTarget( angles[i], _target.position);
+                    var value = SetAngleToTarget( angles[i], target);
                     value *=  AddWeightToAngle(angles[i], val.position); 
                     distances[i] = value;
                 }
@@ -246,7 +246,7 @@ namespace Script
             for (var i = 0; i < detectObstacles.Count; i++)
             {
                 returnValue.Add(detectObstacles[i].transform); 
-                if (Vector2.Distance(transform.position, detectObstacles[i].transform.position)<Vector2.Distance(transform.position, _target.position))
+                if (Vector2.Distance(transform.position, detectObstacles[i].transform.position)<Vector2.Distance(transform.position, target))
                 {
                     
 
