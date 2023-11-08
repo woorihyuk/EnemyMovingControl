@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,7 +10,7 @@ namespace Script
     {
         // private float _angle;
         public Collider2D obstacleCheckCollider;
-        public Collider2D obstacleCollisionCollider;
+        private Collider2D _collider;
         public Vector2 target;
         public List<Transform> obstacles;
         public ContactFilter2D filter2D;
@@ -25,6 +26,8 @@ namespace Script
         //
         private void Start()
         {
+            _collider = GetComponent<Collider2D>();
+
             angles = new[]
             {
                 new Vector2(0, 1),
@@ -32,13 +35,13 @@ namespace Script
                 new Vector2(0.4f, 1),
                 new Vector2(0.6f, 1),
                 new Vector2(1, 1),
-                new Vector2(1,0.6f),
+                new Vector2(1, 0.6f),
                 new Vector2(1, 0.4f),
-                new Vector2(1,0.2f),
+                new Vector2(1, 0.2f),
                 new Vector2(1, 0),
-                new Vector2(1,-0.2f),
+                new Vector2(1, -0.2f),
                 new Vector2(1, -0.4f),
-                new Vector2(1,-0.6f),
+                new Vector2(1, -0.6f),
                 new Vector2(1, -1),
                 new Vector2(0.6f, -1),
                 new Vector2(0.4f, -1),
@@ -48,27 +51,28 @@ namespace Script
                 new Vector2(-0.4f, -1),
                 new Vector2(-0.6f, -1),
                 new Vector2(-1, -1),
-                new Vector2(-1,-0.6f),
+                new Vector2(-1, -0.6f),
                 new Vector2(-1, -0.4f),
-                new Vector2(-1,-0.2f),
+                new Vector2(-1, -0.2f),
                 new Vector2(-1, 0),
-                new Vector2(-1,0.2f),
+                new Vector2(-1, 0.2f),
                 new Vector2(-1, 0.4f),
-                new Vector2(-1,0.6f),
+                new Vector2(-1, 0.6f),
                 new Vector2(-1, 1),
                 new Vector2(-0.6f, 1),
                 new Vector2(-0.4f, 1),
-                new Vector2(-0.2f,1)
+                new Vector2(-0.2f, 1)
             };
         }
 
         private void Update()
         {
+            print(target);
             obstacles = CheckObstacle(obstacleCheckCollider);
             //var collisionObstacle = CheckObstacle(obstacleCollisionCollider);
             var distances = new float[angles.Length];
             var obstacleDist = new float[angles.Length];
-            
+
 
             // for (var i = 0; i < angles.Length; i++)
             // {
@@ -97,13 +101,16 @@ namespace Script
             //
             // print(selectedObstacleDirection);
             //
+            for (var i = 0; i < angles.Length; i++)
+            {
+                distances[i] = SetAngleToTarget(angles[i], target);
+            }
+
             foreach (var val in obstacles)
             {
                 for (var i = 0; i < angles.Length; i++)
                 {
-                    var value = SetAngleToTarget( angles[i], target);
-                    value *=  AddWeightToAngle(angles[i], val.position); 
-                    distances[i] = value;
+                    distances[i] *= AddWeightToAngle(angles[i], val.position);
                 }
 
                 distances = SelectBestDistance(distances);
@@ -123,7 +130,7 @@ namespace Script
             //     }
             //     distances[i] = value;
             // }
-            
+
             var lastDistance = 0f;
             var selectedDirection = 0;
 
@@ -133,7 +140,7 @@ namespace Script
                 // {
                 //     continue;
                 // }
-                if (distances[i]>lastDistance)
+                if (distances[i] > lastDistance)
                 {
                     lastDistance = distances[i];
                     selectedDirection = i;
@@ -149,11 +156,10 @@ namespace Script
                 // }
                 if (i == selectedDirection)
                 {
-                   // print(distances[i]);
                     Debug.DrawRay(transform.position, angles[i].normalized * distances[i], Color.blue);
                     transform.position += (Vector3)angles[i].normalized * (speed * Time.deltaTime);
                 }
-                
+
                 else
                 {
                     Debug.DrawRay(transform.position, angles[i].normalized * distances[i], Color.green);
@@ -161,28 +167,28 @@ namespace Script
             }
         }
 
-        private float SetAngleToTarget(Vector2 angle, Vector2 target) 
+        private float SetAngleToTarget(Vector2 angle, Vector2 target)
         {
             var myAngle = (target - (Vector2)transform.position).normalized;
             var dotProduct = Vector2.Dot(angle.normalized, myAngle);
-            
-            dotProduct += (1 - dotProduct)/2;
+
+            dotProduct += (1 - dotProduct) / 2;
             return dotProduct;
         }
-        
+
         private float ob(Vector2 angle, Vector2 target)
         {
             var myAngle = (target - (Vector2)transform.position).normalized;
             var dotProduct = Vector2.Dot(angle.normalized, myAngle);
             //dotProduct *= -1;
-            dotProduct += (1 - dotProduct)/2;
+            dotProduct += (1 - dotProduct) / 2;
 
             //dotProduct = 1 - Math.Abs(dotProduct - 0.65f);
 
             return dotProduct;
         }
 
-        private float [] SelectBestDistance(float[] distances)
+        private float[] SelectBestDistance(float[] distances)
         {
             var lastDistance = 0f;
             var selectedDirection = 0;
@@ -193,7 +199,7 @@ namespace Script
                 // {
                 //     continue;
                 // }
-                if (distances[i]>lastDistance)
+                if (distances[i] > lastDistance)
                 {
                     lastDistance = distances[i];
                     selectedDirection = i;
@@ -214,14 +220,26 @@ namespace Script
             var myAngle = (target - (Vector2)transform.position).normalized;
             var dotProduct = Vector2.Dot(angle.normalized, myAngle);
             dotProduct *= -1;
-            dotProduct += (1 - dotProduct)/2;
-
+            dotProduct += (1 - dotProduct) / 2;
+            dotProduct *= 1 / (obstacleCheckCollider.bounds.size.x - _collider.bounds.size.x) *
+                          (obstacleCheckCollider.bounds.size.x -
+                           Vector2.Distance(transform.position,
+                               target)-1);
+            print(1 / (obstacleCheckCollider.bounds.size.x - _collider.bounds.size.x));
+            print(((obstacleCheckCollider.bounds.size.x -
+                Vector2.Distance(transform.position,
+                    target))));
+            print($"dis{Vector2.Distance(transform.position, target)}");
+            print(1 / (obstacleCheckCollider.bounds.size.x - _collider.bounds.size.x) *
+                  (obstacleCheckCollider.bounds.size.x -
+                   Vector2.Distance(transform.position,
+                       target)-1));
             //가까울수록 가충치 크게 적용
-            dotProduct += (1 - dotProduct) - (1 - dotProduct) * (1 / Vector2.Distance(transform.position, target));
+            //dotProduct += (1 - dotProduct) * (1/ (myCollider.bounds.size.x / 2) -                  / Vector2.Distance(transform.position, this.target));
+            // 1 / (b - a) * (x - a)
+            //dotProduct += (1 - dotProduct) - (1 - dotProduct) * (1 / Vector2.Distance(transform.position, target));
             //dotProduct = 1 - Math.Abs(dotProduct - 0.65f);
             //value 가 가까울수록 작아져야함
-            // 타겟 방향을 중심으로 좌우로 많이 떨어져 있을수록 가중치 추가
-            // 타겟 방향 기준으로 좌우로 나눠서 장애물이 많이 있는쪽에 가중치 추가
             return dotProduct;
         }
 
@@ -241,15 +259,17 @@ namespace Script
         {
             var detectObstacles = new List<Collider2D>();
             var count = myCollider.OverlapCollider(filter2D, detectObstacles);
+            detectObstacles.Remove(myCollider);
+            detectObstacles.Remove(_collider);
+
             var returnValue = new List<Transform>();
 
             for (var i = 0; i < detectObstacles.Count; i++)
             {
-                returnValue.Add(detectObstacles[i].transform); 
-                if (Vector2.Distance(transform.position, detectObstacles[i].transform.position)<Vector2.Distance(transform.position, target))
+                returnValue.Add(detectObstacles[i].transform);
+                if (Vector2.Distance(transform.position, detectObstacles[i].transform.position) <
+                    Vector2.Distance(transform.position, target))
                 {
-                    
-
                 }
             }
             //
@@ -263,7 +283,9 @@ namespace Script
             //         returnValue.Add(ray.collider.transform);
             //     }
             // }
-            
+
+            returnValue.Remove(obstacleCheckCollider.transform);
+            returnValue.Remove(myCollider.transform);
             return returnValue;
         }
     }

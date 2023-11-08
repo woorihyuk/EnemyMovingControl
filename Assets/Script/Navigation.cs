@@ -7,14 +7,21 @@ namespace Script
     {
         public Transform player;
         public GameObject mark;
-        [SerializeField] private MoveController moveController;
         [SerializeField] private LayerMask obstacleCheckLayer;
+        private MoveController _moveController;
+        private Collider2D _myCollider;
         private Vector2 _targetPos;
+
+        private void Start()
+        {
+            _moveController = GetComponent<MoveController>();
+            _myCollider = GetComponent<Collider2D>();
+        }
 
         private void Update()
         {
             ObstacleCheck();
-            moveController.target = _targetPos;
+            _moveController.target = _targetPos;
             Debug.DrawRay(transform.position, ( _targetPos-(Vector2)transform.position)*Vector2.Distance(transform.position, _targetPos));
             mark.transform.position = _targetPos;
         }
@@ -37,8 +44,8 @@ namespace Script
                 {
                     var bounds = obj.bounds;
                     var position = obj.transform.position;
-                    var pos1 = (Vector2)position + new Vector2(bounds.size.x / 2*-1, bounds.size.y / 2);
-                    var pos2 = (Vector2)position + new Vector2(bounds.size.x / 2, (bounds.size.y / 2*-1));
+                    var pos1 = (Vector2)position + new Vector2(bounds.size.x / 2*-1 + _myCollider.bounds.size.x/2*-1, bounds.size.y / 2);
+                    var pos2 = (Vector2)position + new Vector2(bounds.size.x / 2, bounds.size.y / 2*-1 + _myCollider.bounds.size.y/2*-1);
                     _targetPos = SelectDirection(pos1, pos2);
                 }
                 else if (transform.position.x<obj.bounds.size.x/2+obj.transform.position.x && transform.position.x>obj.transform.position.x-obj.bounds.size.x/2)
@@ -46,7 +53,7 @@ namespace Script
                     var bounds = obj.bounds;
                     var position = obj.transform.position;
                     var pos1 = (Vector2)position + new Vector2(bounds.size.x / 2, 0);
-                    var pos2 = (Vector2)position + new Vector2(bounds.size.x / 2*-1, 0);
+                    var pos2 = (Vector2)position + new Vector2(bounds.size.x / 2*-1 + _myCollider.bounds.size.x/2*-1, 0);
                     _targetPos = SelectDirection(pos1, pos2);
                 }
                 else
@@ -54,18 +61,18 @@ namespace Script
                     var bounds = obj.bounds;
                     var position = obj.transform.position;
                     var pos1 = (Vector2)position + new Vector2(bounds.size.x / 2, bounds.size.y / 2);
-                    var pos2 = (Vector2)position + new Vector2(bounds.size.x / 2*-1, (bounds.size.y / 2*-1));
+                    var pos2 = (Vector2)position + new Vector2(bounds.size.x / 2*-1 + _myCollider.bounds.size.x/2*-1, bounds.size.y / 2*-1 + _myCollider.bounds.size.y/2*-1);
                     _targetPos = SelectDirection(pos1, pos2);
                 }
             }
-            else if (transform.position.y<obj.bounds.size.y/2+obj.transform.position.y && transform.position.y>obj.transform.position.y-obj.bounds.size.y/2)
+            else if (transform.position.y<obj.bounds.size.y/2+obj.transform.position.y && transform.position.y>obj.transform.position.y-obj.bounds.size.y/2 + _myCollider.bounds.size.y/2*-1)
             {
                 if (transform.position.x>obj.bounds.size.x/2+obj.transform.position.x)
                 {
                     var bounds = obj.bounds;
                     var position = obj.transform.position;
                     var pos1 = (Vector2)position + new Vector2(0, bounds.size.y / 2);
-                    var pos2 = (Vector2)position + new Vector2(0, (bounds.size.y / 2*-1));
+                    var pos2 = (Vector2)position + new Vector2(0, bounds.size.y / 2*-1 + _myCollider.bounds.size.y/2*-1);
                     _targetPos = SelectDirection(pos1, pos2);
                 }
                 else
@@ -73,7 +80,7 @@ namespace Script
                     var bounds = obj.bounds;
                     var position = obj.transform.position;
                     var pos1 = (Vector2)position + new Vector2(0, bounds.size.y / 2);
-                    var pos2 = (Vector2)position + new Vector2(0, (bounds.size.y / 2*-1));
+                    var pos2 = (Vector2)position + new Vector2(0, bounds.size.y / 2*-1 + _myCollider.bounds.size.y/2*-1);
                     _targetPos = SelectDirection(pos1, pos2);
                 }
             }
@@ -84,7 +91,7 @@ namespace Script
                     var bounds = obj.bounds;
                     var position = obj.transform.position;
                     var pos1 = (Vector2)position + new Vector2(bounds.size.x / 2, bounds.size.y / 2);
-                    var pos2 = (Vector2)position + new Vector2(bounds.size.x / 2*-1, (bounds.size.y / 2*-1));
+                    var pos2 = (Vector2)position + new Vector2(bounds.size.x / 2*-1 + _myCollider.bounds.size.x/2*-1, bounds.size.y / 2*-1 + _myCollider.bounds.size.y/2*-1);
                     _targetPos = SelectDirection(pos1, pos2);
                 }
                 else if (transform.position.x<obj.bounds.size.x/2+obj.transform.position.x && transform.position.x>obj.transform.position.x-obj.bounds.size.x/2)
@@ -92,15 +99,15 @@ namespace Script
                     var bounds = obj.bounds;
                     var position = obj.transform.position;
                     var pos1 = (Vector2)position + new Vector2(bounds.size.x / 2, 0);
-                    var pos2 = (Vector2)position + new Vector2(bounds.size.x / 2*-1, 0);
+                    var pos2 = (Vector2)position + new Vector2(bounds.size.x / 2*-1 + _myCollider.bounds.size.x/2*-1, 0);
                     _targetPos = SelectDirection(pos1, pos2);
                 }
                 else
                 {
                     var bounds = obj.bounds;
                     var position = obj.transform.position;
-                    var pos1 = (Vector2)position + new Vector2(bounds.size.x / 2*-1, bounds.size.y / 2);
-                    var pos2 = (Vector2)position + new Vector2(bounds.size.x / 2, (bounds.size.y / 2*-1));
+                    var pos1 = (Vector2)position + new Vector2(bounds.size.x / 2*-1 + _myCollider.bounds.size.x/2*-1, bounds.size.y / 2);
+                    var pos2 = (Vector2)position + new Vector2(bounds.size.x / 2, bounds.size.y / 2*-1 + _myCollider.bounds.size.y/2*-1);
                     _targetPos = SelectDirection(pos1, pos2);
                 }
             }
@@ -108,8 +115,8 @@ namespace Script
 
         private Vector2 SelectDirection(Vector2 pos1, Vector2 pos2)
         {
-            var distance1 = Vector2.Distance(transform.position, pos1);
-            var distance2 = Vector2.Distance(transform.position, pos2);
+            var distance1 = Vector2.Distance(transform.position, pos1) + Vector2.Distance(pos1, player.position);
+            var distance2 = Vector2.Distance(transform.position, pos2) + Vector2.Distance(pos2, player.position);
             return distance1 < distance2 ? pos1 : pos2;
         }
     }
