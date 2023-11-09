@@ -1,16 +1,15 @@
-using System;
 using UnityEngine;
 
 namespace Script
 {
     public class Navigation : MonoBehaviour
     {
-        public Transform player;
-        public GameObject mark;
+        public Transform target;
+        
         [SerializeField] private LayerMask obstacleCheckLayer;
+        
         private MoveController _moveController;
         private Collider2D _myCollider;
-        private Vector2 _targetPos;
 
         private void Start()
         {
@@ -20,116 +19,46 @@ namespace Script
 
         private void Update()
         {
-            ObstacleCheck();
-            _moveController.target = _targetPos;
-            Debug.DrawRay(transform.position, ( _targetPos-(Vector2)transform.position)*Vector2.Distance(transform.position, _targetPos));
-            mark.transform.position = _targetPos;
+            _moveController.destination = SetByPassPoint();
+            //방향 표시
+            var position = transform.position;
+            Debug.DrawRay(position, (_moveController.destination - (Vector2)position).normalized*Vector2.Distance(position, _moveController.destination));
         }
 
-        private void ObstacleCheck()
+        //장애물 우회 지점 설정
+        private Vector2 SetByPassPoint()
         {
-            var ray = Physics2D.Raycast(transform.position, player.position - transform.position,
-                Vector2.Distance(player.position, transform.position), obstacleCheckLayer);
-            if (ray.collider == null)
+            var thisPos = transform.position;
+            var targetPos = target.position;
+            var rayHit = Physics2D.Raycast(thisPos, targetPos - thisPos,
+                Vector2.Distance(targetPos, thisPos), obstacleCheckLayer);
+            
+            if (!rayHit)
             {
-                _targetPos = player.position;
-                return;
+                return target.position;
             }
+            
+            var obstacle = rayHit.collider;
+            var obstacleBounds = obstacle.bounds;
 
-          
-            
-            var obj = ray.collider;
-            var bounds = obj.bounds;
-            
-            var i = (obj.transform.position - transform.position).normalized;
-            
-            var posA = obj.transform.position + new Vector3(i.y, i.x*-1) * (bounds.size.x/2 + _myCollider.bounds.size.x/2);
-            var posB = obj.transform.position + new Vector3(i.y*-1, i.x)* (bounds.size.x/2 + _myCollider.bounds.size.x/2);
+            var obstaclePos = obstacle.transform.position;
+            var distance = (obstaclePos - transform.position).normalized;
 
-            _targetPos = SelectDirection(posA, posB);
+            var thisBounds = _myCollider.bounds;
             
-            
+            var posA = obstaclePos + new Vector3(distance.y, distance.x*-1) * (obstacleBounds.size.x/2 + thisBounds.size.x/2);
+            var posB = obstaclePos + new Vector3(distance.y*-1, distance.x)* (obstacleBounds.size.x/2 + thisBounds.size.x/2);
 
-
-            // if (transform.position.y>obj.bounds.size.y/2+obj.transform.position.y)
-            // {
-            //     if (transform.position.x>obj.bounds.size.x/2+obj.transform.position.x)
-            //     {
-            //         var bounds = obj.bounds;
-            //         var position = obj.transform.position;
-            //         var pos1 = (Vector2)position + new Vector2(bounds.size.x / 2*-1 + _myCollider.bounds.size.x/2*-1, bounds.size.y / 2+ _myCollider.bounds.size.y/2);
-            //         var pos2 = (Vector2)position + new Vector2(bounds.size.x / 2, bounds.size.y / 2*-1 + _myCollider.bounds.size.y/2*-1);
-            //         _targetPos = SelectDirection(pos1, pos2);
-            //     }
-            //     else if (transform.position.x<obj.bounds.size.x/2+obj.transform.position.x && transform.position.x>obj.transform.position.x-obj.bounds.size.x/2)
-            //     {
-            //         var bounds = obj.bounds;
-            //         var position = obj.transform.position;
-            //         var pos1 = (Vector2)position + new Vector2(bounds.size.x / 2, 0);
-            //         var pos2 = (Vector2)position + new Vector2(bounds.size.x / 2*-1 + _myCollider.bounds.size.x/2*-1, 0);
-            //         _targetPos = SelectDirection(pos1, pos2);
-            //     }
-            //     else
-            //     {
-            //         var bounds = obj.bounds;
-            //         var position = obj.transform.position;
-            //         var pos1 = (Vector2)position + new Vector2(bounds.size.x / 2, bounds.size.y / 2+ _myCollider.bounds.size.y/2);
-            //         var pos2 = (Vector2)position + new Vector2(bounds.size.x / 2*-1 + _myCollider.bounds.size.x/2*-1, bounds.size.y / 2*-1 + _myCollider.bounds.size.y/2*-1);
-            //         _targetPos = SelectDirection(pos1, pos2);
-            //     }
-            // }
-            // else if (transform.position.y<obj.bounds.size.y/2+obj.transform.position.y && transform.position.y>obj.transform.position.y-obj.bounds.size.y/2 + _myCollider.bounds.size.y/2*-1)
-            // {
-            //     if (transform.position.x>obj.bounds.size.x/2+obj.transform.position.x)
-            //     {
-            //         var bounds = obj.bounds;
-            //         var position = obj.transform.position;
-            //         var pos1 = (Vector2)position + new Vector2(0, bounds.size.y / 2+ _myCollider.bounds.size.y/2);
-            //         var pos2 = (Vector2)position + new Vector2(0, bounds.size.y / 2*-1 + _myCollider.bounds.size.y/2*-1);
-            //         _targetPos = SelectDirection(pos1, pos2);
-            //     }
-            //     else
-            //     {
-            //         var bounds = obj.bounds;
-            //         var position = obj.transform.position;
-            //         var pos1 = (Vector2)position + new Vector2(0, bounds.size.y / 2+ _myCollider.bounds.size.y/2);
-            //         var pos2 = (Vector2)position + new Vector2(0, bounds.size.y / 2*-1 + _myCollider.bounds.size.y/2*-1);
-            //         _targetPos = SelectDirection(pos1, pos2);
-            //     }
-            // }
-            // else
-            // {
-            //     if (transform.position.x>obj.bounds.size.x/2+obj.transform.position.x)
-            //     {
-            //         var bounds = obj.bounds;
-            //         var position = obj.transform.position;
-            //         var pos1 = (Vector2)position + new Vector2(bounds.size.x / 2, bounds.size.y / 2+ _myCollider.bounds.size.y/2);
-            //         var pos2 = (Vector2)position + new Vector2(bounds.size.x / 2*-1 + _myCollider.bounds.size.x/2*-1, bounds.size.y / 2*-1 + _myCollider.bounds.size.y/2*-1);
-            //         _targetPos = SelectDirection(pos1, pos2);
-            //     }
-            //     else if (transform.position.x<obj.bounds.size.x/2+obj.transform.position.x && transform.position.x>obj.transform.position.x-obj.bounds.size.x/2)
-            //     {
-            //         var bounds = obj.bounds;
-            //         var position = obj.transform.position;
-            //         var pos1 = (Vector2)position + new Vector2(bounds.size.x / 2, 0);
-            //         var pos2 = (Vector2)position + new Vector2(bounds.size.x / 2*-1 + _myCollider.bounds.size.x/2*-1, 0);
-            //         _targetPos = SelectDirection(pos1, pos2);
-            //     }
-            //     else
-            //     {
-            //         var bounds = obj.bounds;
-            //         var position = obj.transform.position;
-            //         var pos1 = (Vector2)position + new Vector2(bounds.size.x / 2*-1 + _myCollider.bounds.size.x/2*-1, bounds.size.y / 2);
-            //         var pos2 = (Vector2)position + new Vector2(bounds.size.x / 2, bounds.size.y / 2*-1 + _myCollider.bounds.size.y/2*-1);
-            //         _targetPos = SelectDirection(pos1, pos2);
-            //     }
-            // }
+            return SelectDirection(posA, posB);
         }
 
+        //두 우회 지점 중 빠른 곳으로 목적지 설정
         private Vector2 SelectDirection(Vector2 pos1, Vector2 pos2)
         {
-            var distance1 = Vector2.Distance(transform.position, pos1) + Vector2.Distance(pos1, player.position);
-            var distance2 = Vector2.Distance(transform.position, pos2) + Vector2.Distance(pos2, player.position);
+            var thisPos = transform.position;
+            var targetPos = target.position;
+            var distance1 = Vector2.Distance(thisPos, pos1) + Vector2.Distance(pos1, targetPos);
+            var distance2 = Vector2.Distance(thisPos, pos2) + Vector2.Distance(pos2, targetPos);
             return distance1 < distance2 ? pos1 : pos2;
         }
     }
