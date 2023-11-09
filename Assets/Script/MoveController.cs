@@ -74,28 +74,10 @@ namespace Script
             var collisionObstacle = CheckObstacle(_myCollider2D);
             var distances = new float[_angles.Length];
             
-            for (var i = 0; i < _angles.Length; i++)
-            {
-                distances[i] = SetAngleToTarget(_angles[i], destination);
-            }
-            foreach (var val in _obstacles)
-            {
-                for (var i = 0; i < _angles.Length; i++)
-                {
-                    distances[i] *= AddWeightToAngle(_angles[i], val.position);
-                }
-
-                distances = NormalizeDirection(distances);
-            }
-
-            foreach (var val in collisionObstacle)
-            {
-                for (var i = 0; i < _angles.Length; i++)
-                {
-                    distances[i] *= ObstacleCollisionEnter(_angles[i],val.position);
-                }
-            }
-
+            SetAngleToTarget(ref distances, destination);
+            AddWeightToAngle(ref distances);
+            ObstacleCollisionEnter(ref distances, collisionObstacle);
+            
             var lastDistance = 0f;
             var selectedDirection = 0;
 
@@ -126,14 +108,15 @@ namespace Script
         }
 
         // 목적지로 가기에 적합한 방향 순으로 가중치 부여
-        private float SetAngleToTarget(Vector2 angle, Vector2 target)
+        private void SetAngleToTarget(ref float[] distanceArray, Vector2 target)
         {
-            var myAngle = (target - (Vector2)transform.position).normalized;
-            var dotProduct = Vector2.Dot(angle.normalized, myAngle);
-
-            dotProduct += (1 - dotProduct) / 2;
-            
-            return dotProduct;
+            for (var i = 0; i < _angles.Length; i++)
+            {
+                var targetDistance = (target - (Vector2)transform.position).normalized;
+                var dotProduct = Vector2.Dot(_angles[i].normalized, targetDistance);
+                dotProduct += (1 - dotProduct) / 2;
+                distanceArray[i] = dotProduct;
+            } 
         }
 
         //가장 큰 방향을 1로 바꾸고 그에 맞게 다른 방향들의 크기 조절
@@ -151,30 +134,51 @@ namespace Script
         }
         
         //주위의 장애물로부터 멀어지도록 가중치 부여
-        private float AddWeightToAngle(Vector2 angle, Vector2 target)
+        private void AddWeightToAngle(ref float[] distanceArray)
         {
-            var thisPos = transform.position;
-            var thisAngle = (target - (Vector2)thisPos).normalized;
-            var dotProduct = Vector2.Dot(angle.normalized, thisAngle);
+            foreach (var val in _obstacles)
+            {
+                for (var i = 0; i < _angles.Length; i++)
+                {
+                    var thisPos = transform.position;
+                    var obstaclePos = val.position;
+                    var thisAngle = (obstaclePos - thisPos).normalized;
+                    var dotProduct = Vector2.Dot(_angles[i].normalized, thisAngle);
             
-            dotProduct *= -1;
-            dotProduct += (1 - dotProduct) / 2;
-            dotProduct += (1 - dotProduct) - (1 - dotProduct) * (1 / Vector2.Distance(thisPos, target));         
-            dotProduct = 1 - Math.Abs(dotProduct - 0.65f);
+                    dotProduct *= -1;
+                    dotProduct += (1 - dotProduct) / 2;
+                    dotProduct += (1 - dotProduct) - (1 - dotProduct) * (1 / Vector2.Distance(thisPos, obstaclePos));         
+                    dotProduct = 1 - Math.Abs(dotProduct - 0.65f);
+
+
+                    distanceArray[i] *= dotProduct;
+                }
+                distanceArray = NormalizeDirection(distanceArray);
+            }
             
-            return dotProduct;
+            
+            //var thisPos = transform.position;
+            //var thisAngle = (target - (Vector2)thisPos).normalized;
+            //var dotProduct = Vector2.Dot(angle.normalized, thisAngle);
         }
 
         //장애물과 충돌하지 않도록 가중치 부여
-        private float ObstacleCollisionEnter(Vector2 angle, Vector2 target)
+        private void ObstacleCollisionEnter(ref float[] distanceArray, List<Transform> collisionObstacle)
         {
-            var myAngle = (target - (Vector2)transform.position).normalized;
-            var dotProduct = Vector2.Dot(angle.normalized, myAngle);
+            foreach (var val in collisionObstacle)
+            {
+                
+                
+                for (var i = 0; i < _angles.Length; i++)
+                {
+                    var myAngle = (val.position - transform.position).normalized;
+                    var dotProduct = Vector2.Dot(_angles[i].normalized, myAngle);
             
-            dotProduct *= -1;
-            dotProduct += (1 - dotProduct)/2;
-            
-            return dotProduct;
+                    dotProduct *= -1;
+                    dotProduct += (1 - dotProduct)/2;
+                    distanceArray[i] *= dotProduct;
+                }
+            }
         }
 
         // 범위 안에 있는 장애물 검출
