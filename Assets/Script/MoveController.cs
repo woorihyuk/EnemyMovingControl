@@ -67,9 +67,8 @@ namespace Script
 
         private void Update()
         {
-            print(target);
             obstacles = CheckObstacle(obstacleCheckCollider);
-            //var collisionObstacle = CheckObstacle(obstacleCollisionCollider);
+            var collisionObstacle = CheckObstacle(_collider);
             var distances = new float[angles.Length];
             var obstacleDist = new float[angles.Length];
 
@@ -105,7 +104,6 @@ namespace Script
             {
                 distances[i] = SetAngleToTarget(angles[i], target);
             }
-
             foreach (var val in obstacles)
             {
                 for (var i = 0; i < angles.Length; i++)
@@ -114,6 +112,14 @@ namespace Script
                 }
 
                 distances = SelectBestDistance(distances);
+            }
+
+            foreach (var val in collisionObstacle)
+            {
+                for (var i = 0; i < angles.Length; i++)
+                {
+                    distances[i] *= ObstacleCollisionEnter(angles[i],val.position);
+                }
             }
             // for (var i = 0; i < angles.Length; i++)
             // {
@@ -221,46 +227,46 @@ namespace Script
             var dotProduct = Vector2.Dot(angle.normalized, myAngle);
             dotProduct *= -1;
             dotProduct += (1 - dotProduct) / 2;
-            dotProduct *= 1 / (obstacleCheckCollider.bounds.size.x - _collider.bounds.size.x) *
-                          (obstacleCheckCollider.bounds.size.x -
-                           Vector2.Distance(transform.position,
-                               target)-1);
-            print(1 / (obstacleCheckCollider.bounds.size.x - _collider.bounds.size.x));
-            print(((obstacleCheckCollider.bounds.size.x -
-                Vector2.Distance(transform.position,
-                    target))));
-            print($"dis{Vector2.Distance(transform.position, target)}");
-            print(1 / (obstacleCheckCollider.bounds.size.x - _collider.bounds.size.x) *
-                  (obstacleCheckCollider.bounds.size.x -
-                   Vector2.Distance(transform.position,
-                       target)-1));
+            // dotProduct *=(1 / (1.25f - _collider.bounds.size.x) * (1.25f - Vector2.Distance(transform.position, target) + 0.25f)-1);
+            // print(1 / (obstacleCheckCollider.bounds.size.x - _collider.bounds.size.x));
+            // print(((obstacleCheckCollider.bounds.size.x -
+            //     Vector2.Distance(transform.position,
+            //         target))));
+            // print($"dis{Vector2.Distance(transform.position, target)}");
+            // print(1 / (obstacleCheckCollider.bounds.size.x - _collider.bounds.size.x) *
+            //       (obstacleCheckCollider.bounds.size.x -
+            //        Vector2.Distance(transform.position,
+            //            target)));
+            // print((1 / (1.25f - _collider.bounds.size.x) *
+            //     (1.25f -
+            //         Vector2.Distance(transform.position,
+            //             target) + 0.25f)-1));
+            // print(
+            //       Vector2.Distance(transform.position,
+            //           target)+1f);
             //가까울수록 가충치 크게 적용
-            //dotProduct += (1 - dotProduct) * (1/ (myCollider.bounds.size.x / 2) -                  / Vector2.Distance(transform.position, this.target));
-            // 1 / (b - a) * (x - a)
+            dotProduct += (1 - dotProduct) - (1 - dotProduct) * (1 / Vector2.Distance(transform.position, target));            // 1 / (b - a) * (x - a)
             //dotProduct += (1 - dotProduct) - (1 - dotProduct) * (1 / Vector2.Distance(transform.position, target));
-            //dotProduct = 1 - Math.Abs(dotProduct - 0.65f);
+            dotProduct = 1 - Math.Abs(dotProduct - 0.65f);
             //value 가 가까울수록 작아져야함
             return dotProduct;
         }
 
-        // private float ObstacleCollisionEnter(Vector2 angle, Vector2 target)
-        // {
-        //     var myAngle = (target - (Vector2)transform.position).normalized;
-        //     var dotProduct = Vector2.Dot(angle.normalized, myAngle);
-        //     dotProduct *= -1;
-        //     dotProduct += (1 - dotProduct)/2;
-        //
-        //     dotProduct = 1 - Math.Abs(dotProduct - 0.65f);
-        //     return dotProduct;
-        //
-        // }
+        private float ObstacleCollisionEnter(Vector2 angle, Vector2 target)
+        {
+            var myAngle = (target - (Vector2)transform.position).normalized;
+            var dotProduct = Vector2.Dot(angle.normalized, myAngle);
+            dotProduct *= -1;
+            dotProduct += (1 - dotProduct)/2;
+        
+            //dotProduct = 1 - Math.Abs(dotProduct - 0.65f);
+            return dotProduct;
+        }
 
         private List<Transform> CheckObstacle(Collider2D myCollider)
         {
             var detectObstacles = new List<Collider2D>();
             var count = myCollider.OverlapCollider(filter2D, detectObstacles);
-            detectObstacles.Remove(myCollider);
-            detectObstacles.Remove(_collider);
 
             var returnValue = new List<Transform>();
 
