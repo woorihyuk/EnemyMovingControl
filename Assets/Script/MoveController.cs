@@ -2,28 +2,36 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.UIElements;
 
 namespace Script
 {
     public class MoveController : MonoBehaviour
     {
+        public Transform targetObject;
         public Vector2 destination;
-        
+
+        public bool noObstacle;
+
         [SerializeField] private Collider2D obstacleCheckCollider;
         [SerializeField] private LayerMask targetLayer;
         [SerializeField] private float speed;
+        [SerializeField] private float range;
 
         private Collider2D _myCollider2D;
-        private List<Transform> _obstacles;
+        //private List<Transform> _obstacles;
 
         private ContactFilter2D _filter2D;
         private Vector2[] _angles;
         private Vector2 _mouse;
-        
+        InputField i;
+
+        private float[] _lastDistances;
+
         private void Start()
         {
             _myCollider2D = GetComponent<Collider2D>();
-
             //방향
             _angles = new[]
             {
@@ -61,6 +69,8 @@ namespace Script
                 new Vector2(-0.2f, 1)
             };
 
+            _lastDistances = new float[_angles.Length];
+
             _filter2D = new ContactFilter2D()
             {
                 useLayerMask = true,
@@ -70,14 +80,17 @@ namespace Script
 
         private void Update()
         {
-            _obstacles = CheckObstacle(obstacleCheckCollider);
+            var obstacles = CheckObstacle(obstacleCheckCollider); // 감지된 장애물
             var collisionObstacle = CheckObstacle(_myCollider2D);
             var distances = new float[_angles.Length];
-            
+
             SetAngleToTarget(ref distances, destination);
-            AddWeightToAngle(ref distances);
+            if (AddWeightToAngle(ref distances, obstacles))
+            {
+                MaintainingDistance(ref distances);
+            }
             ObstacleCollisionEnter(ref distances, collisionObstacle);
-            
+
             var lastDistance = 0f;
             var selectedDirection = 0;
 
@@ -89,6 +102,12 @@ namespace Script
                     selectedDirection = i;
                 }
             }
+
+            if (Vector2.Distance(targetObject.position, transform.position)<=range && noObstacle)
+            {
+                return;
+            }
+
 
             for (var i = 0; i < _angles.Length; i++)
             {
@@ -116,7 +135,7 @@ namespace Script
                 var dotProduct = Vector2.Dot(_angles[i].normalized, targetDistance);
                 dotProduct += (1 - dotProduct) / 2;
                 distanceArray[i] = dotProduct;
-            } 
+            }
         }
 
         //가장 큰 방향을 1로 바꾸고 그에 맞게 다른 방향들의 크기 조절
@@ -132,11 +151,15 @@ namespace Script
 
             return distances;
         }
-        
+
         //주위의 장애물로부터 멀어지도록 가중치 부여
-        private void AddWeightToAngle(ref float[] distanceArray)
+        private bool AddWeightToAngle(ref float[] distanceArray, List<Transform> obstacles)
         {
-            foreach (var val in _obstacles)
+            if (obstacles.Count == 0)
+            {
+                return true;
+            }
+            foreach (var val in obstacles)
             {
                 for (var i = 0; i < _angles.Length; i++)
                 {
@@ -144,10 +167,10 @@ namespace Script
                     var obstaclePos = val.position;
                     var thisAngle = (obstaclePos - thisPos).normalized;
                     var dotProduct = Vector2.Dot(_angles[i].normalized, thisAngle);
-            
+
                     dotProduct *= -1;
                     dotProduct += (1 - dotProduct) / 2;
-                    dotProduct += (1 - dotProduct) - (1 - dotProduct) * (1 / Vector2.Distance(thisPos, obstaclePos));         
+                    dotProduct += 1 - dotProduct - (1 - dotProduct) * (1 / Vector2.Distance(thisPos, obstaclePos));
                     dotProduct = 1 - Math.Abs(dotProduct - 0.65f);
 
 
@@ -155,27 +178,47 @@ namespace Script
                 }
                 distanceArray = NormalizeDirection(distanceArray);
             }
-            
-            
+            return false;
+
             //var thisPos = transform.position;
             //var thisAngle = (target - (Vector2)thisPos).normalized;
             //var dotProduct = Vector2.Dot(angle.normalized, thisAngle);
         }
+
+        //목표물과 일정 거리 유지
+        private void MaintainingDistance(ref float[] distanceArray)
+        {
+            for (var i = 0; i < _angles.Length; i++)
+            {
+                var thisPos = transform.position;
+                var thisAngle = (targetObject.position - thisPos).normalized;
+                var dotProduct = Vector2.Dot(_angles[i].normalized, thisAngle);
+
+                dotProduct *= -1;
+                dotProduct += (1 - dotProduct) / 2;
+                dotProduct = 1 - Math.Abs(dotProduct - range / Vector2.Distance(thisPos, targetObject.position));
+
+
+                distanceArray[i] *= dotProduct;
+            }
+            distanceArray = NormalizeDirection(distanceArray);
+        }
+
 
         //장애물과 충돌하지 않도록 가중치 부여
         private void ObstacleCollisionEnter(ref float[] distanceArray, List<Transform> collisionObstacle)
         {
             foreach (var val in collisionObstacle)
             {
-                
-                
+
+
                 for (var i = 0; i < _angles.Length; i++)
                 {
                     var myAngle = (val.position - transform.position).normalized;
                     var dotProduct = Vector2.Dot(_angles[i].normalized, myAngle);
-            
+
                     dotProduct *= -1;
-                    dotProduct += (1 - dotProduct)/2;
+                    dotProduct += (1 - dotProduct) / 2;
                     distanceArray[i] *= dotProduct;
                 }
             }
@@ -191,12 +234,9 @@ namespace Script
             foreach (var val in detectObstacles)
             {
                 obstaclesTransform.Add(val.transform);
-                if (Vector2.Distance(transform.position, val.transform.position) <
-                    Vector2.Distance(transform.position, destination))
-                {
-                }
+
             }
-            
+
             return obstaclesTransform;
         }
     }

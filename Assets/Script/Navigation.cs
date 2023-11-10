@@ -35,9 +35,10 @@ namespace Script
             
             if (!rayHit)
             {
+                _moveController.noObstacle = true;
                 return target.position;
             }
-            
+            _moveController.noObstacle=false;
             var obstacle = rayHit.collider;
             var obstacleBounds = obstacle.bounds;
 
@@ -60,6 +61,7 @@ namespace Script
             var distance1 = Vector2.Distance(thisPos, pos1) + Vector2.Distance(pos1, targetPos);
             var distance2 = Vector2.Distance(thisPos, pos2) + Vector2.Distance(pos2, targetPos);
             return distance1 < distance2 ? pos1 : pos2;
-        }
+        } 
+
     }
 }
