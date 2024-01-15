@@ -15,6 +15,8 @@ namespace Script
         public bool noObstacle;
 
         [SerializeField] private Collider2D obstacleCheckCollider;
+        [SerializeField] private Collider2D obstaclRecognitionCollider;
+
         [SerializeField] private LayerMask targetLayer;
         [SerializeField] private float speed;
         [SerializeField] private float range;
@@ -80,16 +82,14 @@ namespace Script
 
         private void Update()
         {
-            var obstacles = CheckObstacle(obstacleCheckCollider); // 감지된 장애물
-            var collisionObstacle = CheckObstacle(_myCollider2D);
             var distances = new float[_angles.Length];
 
-            SetAngleToTarget(ref distances, destination);
-            if (AddWeightToAngle(ref distances, obstacles))
+            distances = SetAngleToTarget( distances, destination);
+            if (AddWeightToAngle(ref distances))
             {
-                MaintainingDistance(ref distances);
+                distances = MaintainingDistance( distances);
             }
-            ObstacleCollisionEnter(ref distances, collisionObstacle);
+            distances = ObstacleCollisionEnter( distances);
 
             var lastDistance = 0f;
             var selectedDirection = 0;
@@ -105,9 +105,8 @@ namespace Script
 
             if (Vector2.Distance(targetObject.position, transform.position)<=range && noObstacle)
             {
-                return;
+                //return;
             }
-
 
             for (var i = 0; i < _angles.Length; i++)
             {
@@ -127,7 +126,7 @@ namespace Script
         }
 
         // 목적지로 가기에 적합한 방향 순으로 가중치 부여
-        private void SetAngleToTarget(ref float[] distanceArray, Vector2 target)
+        private float[] SetAngleToTarget(float[] distanceArray, Vector2 target)
         {
             for (var i = 0; i < _angles.Length; i++)
             {
@@ -136,6 +135,7 @@ namespace Script
                 dotProduct += (1 - dotProduct) / 2;
                 distanceArray[i] = dotProduct;
             }
+            return distanceArray;
         }
 
         //가장 큰 방향을 1로 바꾸고 그에 맞게 다른 방향들의 크기 조절
@@ -143,7 +143,7 @@ namespace Script
         {
             var lastDistance = distances.Prepend(0f).Max();
 
-            var weight = lastDistance / 1;
+            var weight = 1 / lastDistance;
             for (var i = 0; i < distances.Length; i++)
             {
                 distances[i] *= weight;
@@ -153,8 +153,10 @@ namespace Script
         }
 
         //주위의 장애물로부터 멀어지도록 가중치 부여
-        private bool AddWeightToAngle(ref float[] distanceArray, List<Transform> obstacles)
+        private bool AddWeightToAngle(ref float[] distanceArray)
         {
+            var obstacles = CheckObstacle(obstacleCheckCollider);
+
             if (obstacles.Count == 0)
             {
                 return true;
@@ -179,14 +181,10 @@ namespace Script
                 distanceArray = NormalizeDirection(distanceArray);
             }
             return false;
-
-            //var thisPos = transform.position;
-            //var thisAngle = (target - (Vector2)thisPos).normalized;
-            //var dotProduct = Vector2.Dot(angle.normalized, thisAngle);
         }
 
         //목표물과 일정 거리 유지
-        private void MaintainingDistance(ref float[] distanceArray)
+        private float[] MaintainingDistance(float[] distanceArray)
         {
             for (var i = 0; i < _angles.Length; i++)
             {
@@ -200,18 +198,19 @@ namespace Script
 
 
                 distanceArray[i] *= dotProduct;
+
+                distanceArray = NormalizeDirection(distanceArray);
             }
-            distanceArray = NormalizeDirection(distanceArray);
+            return distanceArray;
         }
 
 
         //장애물과 충돌하지 않도록 가중치 부여
-        private void ObstacleCollisionEnter(ref float[] distanceArray, List<Transform> collisionObstacle)
+        private float[] ObstacleCollisionEnter(float[] distanceArray)
         {
+            var collisionObstacle = CheckObstacle(_myCollider2D);
             foreach (var val in collisionObstacle)
             {
-
-
                 for (var i = 0; i < _angles.Length; i++)
                 {
                     var myAngle = (val.position - transform.position).normalized;
@@ -222,6 +221,7 @@ namespace Script
                     distanceArray[i] *= dotProduct;
                 }
             }
+            return distanceArray;
         }
 
         // 범위 안에 있는 장애물 검출
@@ -239,5 +239,6 @@ namespace Script
 
             return obstaclesTransform;
         }
+
     }
 }
